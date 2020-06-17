@@ -237,6 +237,9 @@ int git__mmap_alignment(size_t *alignment)
 
 int p_mmap(git_map *out, size_t len, int prot, int flags, int fd, git_off_t offset)
 {
+	const char *ptr;
+	size_t remaining_len;
+
 	GIT_MMAP_VALIDATE(out, len, prot, flags);
 
 	/* writes cannot be emulated without handling pagefaults since write happens by
@@ -247,16 +250,30 @@ int p_mmap(git_map *out, size_t len, int prot, int flags, int fd, git_off_t offs
 		return -1;
 	}
 
+	if (!git__is_ssizet(len)) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	out->len = 0;
 	out->data = git__malloc(len);
 	GIT_ERROR_CHECK_ALLOC(out->data);
 
-	if (!git__is_ssizet(len) ||
-		(p_pread(fd, out->data, len, offset) != (ssize_t)len)) {
-		git_error_set(GIT_ERROR_OS, "mmap emulation failed");
-		git__free(out->data);
-		out->data = NULL;
-		return -1;
+	remaining_len = len;
+	ptr = (const char *)out->data;
+	while (remaining_len > 0) {
+		ssize_t nb;
+		HANDLE_EINTR(nb, p_pread(fd, (void *)ptr, remaining_len, offset));
+		if (nb <= 0) {
+			git_error_set(GIT_ERROR_OS, "mmap emulation failed");
+			git__free(out->data);
+			out->data = NULL;
+			return -1;
+		}
+
+		ptr += nb;
+		offset += nb;
+		remaining_len -= nb;
 	}
 
 	out->len = len;

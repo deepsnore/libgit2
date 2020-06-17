@@ -99,4 +99,7 @@ GIT_INLINE(int) p_regcomp(regex_t *preg, const char *pattern, int cflags)
 # define p_regcomp regcomp
 #endif
 
+#define p_pread(f, d, s, o) pread(f, d, s, o)
+#define p_pwrite(f, d, s, o) pwrite(f, d, s, o)
+
 #endif
