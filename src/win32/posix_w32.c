@@ -940,3 +940,55 @@ int p_inet_pton(int af, const char *src, void *dst)
 	errno = EINVAL;
 	return -1;
 }
+
+ssize_t p_pread(int fd, void *data, size_t size, off64_t offset)
+{
+	HANDLE fh;
+	DWORD rsize = 0;
+	OVERLAPPED ov = {0};
+	LARGE_INTEGER pos = {0};
+
+	/* TODO: Loop over to read in smaller chunks to support large reads */
+	if (!git__is_uint32(size)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	pos.QuadPart = offset;
+	ov.Offset = pos.LowPart;
+	ov.OffsetHigh = pos.HighPart;
+	fh = (HANDLE)_get_osfhandle(fd);
+
+	if (ReadFile(fh, data, (DWORD)size, &rsize, &ov)) {
+		return (ssize_t)rsize;
+	}
+
+	set_errno();
+	return -1;
+}
+
+ssize_t p_pwrite(int fd, const void *data, size_t size, off64_t offset)
+{
+	HANDLE fh;
+	DWORD wsize = 0;
+	OVERLAPPED ov = {0};
+	LARGE_INTEGER pos = {0};
+
+	/* TODO: Loop over to write in smaller chunks to support large reads */
+	if (!git__is_uint32(size)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	pos.QuadPart = offset;
+	ov.Offset = pos.LowPart;
+	ov.OffsetHigh = pos.HighPart;
+	fh = (HANDLE)_get_osfhandle(fd);
+
+	if (WriteFile(fh, data, (DWORD)size, &wsize, &ov)) {
+		return (ssize_t)wsize;
+	}
+
+	set_errno();
+	return -1;
+}
