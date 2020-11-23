@@ -239,21 +239,23 @@ int p_mmap(git_map *out, size_t len, int prot, int flags, int fd, git_off_t offs
 {
 	GIT_MMAP_VALIDATE(out, len, prot, flags);
 
-	out->data = NULL;
-	out->len = 0;
-
-	if ((prot & GIT_PROT_WRITE) && ((flags & GIT_MAP_TYPE) == GIT_MAP_SHARED)) {
-		git_error_set(GIT_ERROR_OS, "trying to map shared-writeable");
+	/* writes cannot be emulated without handling pagefaults since write happens by
+	 * writing to mapped memory */
+	if (prot & GIT_PROT_WRITE) {
+		git_error_set(GIT_ERROR_OS, "trying to map %s-writeable",
+				((flags & GIT_MAP_TYPE) == GIT_MAP_SHARED) ? "shared": "private");
 		return -1;
 	}
 
-	out->data = malloc(len);
+	out->len = 0;
+	out->data = git__malloc(len);
 	GIT_ERROR_CHECK_ALLOC(out->data);
 
 	if (!git__is_ssizet(len) ||
-		(p_lseek(fd, offset, SEEK_SET) < 0) ||
-		(p_read(fd, out->data, len) != (ssize_t)len)) {
+		(p_pread(fd, out->data, len, offset) != (ssize_t)len)) {
 		git_error_set(GIT_ERROR_OS, "mmap emulation failed");
+		git__free(out->data);
+		out->data = NULL;
 		return -1;
 	}
 
@@ -264,7 +266,11 @@ int p_mmap(git_map *out, size_t len, int prot, int flags, int fd, git_off_t offs
 int p_munmap(git_map *map)
 {
 	assert(map != NULL);
-	free(map->data);
+	git__free(map->data);
+
+	/* Initializing will help debug use-after-free */
+	map->len = 0;
+	map->data = NULL;
 
 	return 0;
 }
