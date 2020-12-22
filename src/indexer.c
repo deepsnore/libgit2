@@ -610,11 +610,15 @@ static int write_at(git_indexer *idx, const void *data, off64_t offset, size_t s
 	while (remaining_size > 0) {
 		ssize_t nb = p_pwrite(idx->pack->mwf.fd, data,
 				min(remaining_size, SSIZE_MAX),
-				offset + (size - remaining_size));
-		if (nb < 0)
+				offset);
+		if (nb <= 0)
 			return -1;
 
 		remaining_size -= nb;
+		if (git__add_int64_overflow(&offset, offset, nb)) {
+			errno = EOVERFLOW;
+			return -1;
+		}
 	}
 #else
 	git_file fd = idx->pack->mwf.fd;

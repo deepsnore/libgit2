@@ -991,7 +991,7 @@ ssize_t p_pread(git_file fd, void *data, size_t size, git_off_t offset)
 
 	/* TODO: Loop over to read in smaller chunks to support large reads */
 	if (!git__is_uint32(size)) {
-		errno = E2BIG;
+		errno = EINVAL;
 		return -1;
 	}
 
@@ -1017,7 +1017,7 @@ ssize_t p_pwrite(git_file fd, const void *data, size_t size, git_off_t offset)
 
 	/* TODO: Loop over to write in smaller chunks to support large reads */
 	if (!git__is_uint32(size)) {
-		errno = E2BIG;
+		errno = EINVAL;
 		return -1;
 	}
 
