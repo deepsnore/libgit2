@@ -42,9 +42,14 @@ GIT_INLINE(int) git__is_int(long long p)
 	return p == (long long)r;
 }
 
+typedef int64_t off64_t;
+
 /* Use clang/gcc compiler intrinsics whenever possible */
 #if (__has_builtin(__builtin_add_overflow) || \
      (defined(__GNUC__) && (__GNUC__ >= 5)))
+
+# define git__add_int64_overflow(out, one, two) \
+    __builtin_add_overflow(one, two, out)
 
 # if (SIZE_MAX == UINT_MAX)
 #  define git__add_sizet_overflow(out, one, two) \
