@@ -1,0 +1,20 @@
+# This is a sample build configuration for C++ – Make.
+# Check our guides at https://confluence.atlassian.com/x/5Q4SMw for more examples.
+# Only use spaces to indent your .yml configuration.
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+image:
+  name: docker-proxy.services.atlassian.com/bitbucket/bitbucket-centos:latest
+  username: buildeng
+  password: $PIPELINES_JWT_TOKEN
+
+pipelines:
+    default:
+        - step:
+            name: Build and test libgit2
+            script:
+                - mkdir -p build
+                - pushd build
+                - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-DNO_MMAP -Doff64_t=int64_t" ..
+                - make -j4 all
+                - ./libgit2_clar -vv -xonline
