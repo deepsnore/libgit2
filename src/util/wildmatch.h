@@ -13,6 +13,10 @@
 #define WM_CASEFOLD 1
 #define WM_PATHNAME 2
 
+#ifdef USE_FNMATCH
+#define WM_FNMATCH 4
+#endif
+
 #define WM_NOMATCH 1
 #define WM_MATCH 0
 #define WM_ABORT_ALL -1

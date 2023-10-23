@@ -55,6 +55,9 @@ option(DEPRECATE_HARD          "Do not include deprecated functions in the libra
 # Compilation options
 option(ENABLE_WERROR           "Enable compilation with -Werror"                       OFF)
 
+# fnmatch for extended glob matching support
+option(USE_FNMATCH             "Use Glibc fnmatch support for extended glob matching"  OFF)
+
 if(UNIX)
 	# NTLM client requires crypto libraries from the system HTTPS stack
 	if(NOT USE_HTTPS)

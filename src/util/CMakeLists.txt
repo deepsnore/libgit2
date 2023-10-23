@@ -68,6 +68,11 @@ endif()
 
 list(SORT UTIL_SRC_SHA256)
 
+# Use glibc fnmatch
+if (USE_FNMATCH STREQUAL "ON")
+    add_definitions(-DUSE_FNMATCH)
+endif()
+
 #
 # Build the library
 #

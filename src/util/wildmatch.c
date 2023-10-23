@@ -313,8 +313,47 @@ static int dowild(const uchar *p, const uchar *text, unsigned int flags)
 	return *text ? WM_NOMATCH : WM_MATCH;
 }
 
+#ifdef USE_FNMATCH
+#include <fnmatch.h>
+#ifndef FNM_EXTMATCH
+#define FNM_EXTMATCH 0
+#endif
+
+static int dofnmatch(const char *p, const char *text, unsigned int flags) {
+	int err;
+	int fnm_flags = FNM_EXTMATCH;
+
+	if (flags & WM_CASEFOLD) {
+		fnm_flags |= FNM_CASEFOLD;
+	}
+	if (flags & WM_PATHNAME) {
+		fnm_flags |= FNM_PATHNAME;
+	}
+
+	err = fnmatch(p, text, fnm_flags);
+	switch (err) {
+	case 0:
+		err = WM_MATCH;
+		break;
+	case FNM_NOMATCH:
+		err = WM_NOMATCH;
+		break;
+	default:
+		err = WM_ABORT_ALL;
+		break;
+	}
+
+	return err;
+}
+#endif
+
 /* Match the "pattern" against the "text" string. */
 int wildmatch(const char *pattern, const char *text, unsigned int flags)
 {
+#ifdef USE_FNMATCH
+	if (flags & WM_FNMATCH) {
+		return dofnmatch(pattern, text, flags);
+	}
+#endif
 	return dowild((const uchar*)pattern, (const uchar*)text, flags);
 }
